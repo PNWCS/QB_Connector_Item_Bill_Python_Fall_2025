@@ -1,11 +1,15 @@
 [project]
-name = "quickbook-connector"
+name = "quickbook-vendor-item-bills"
 version = "0.1.0"
 description = ""
 authors = [
-    {name = "Your Name",email = "you@example.com"}
+    {name = "Damien Christian",email = "chris387@pnw.edu"},
+    {name = "Sujay Parmar",email = "you@pnw.edu"},
+    {name = "Yagna Patel",email = "you@pnw.edu"}
 ]
 readme = "README.md"
+packages = [{ include = "quickbook_vendor_item_bills" }]
+
 requires-python = ">=3.12,<3.15"
 dependencies = [
     "openpyxl (>=3.1.5,<4.0.0)",
@@ -18,6 +22,9 @@ dependencies = [
     "pyinstaller (>=6.16.0,<7.0.0)"
 ]
 
+[tool.pytest.ini_options]
+addopts = "-q"
+pythonpath = ["quickbook_vendor_item_bills"]
 
 [build-system]
 requires = ["poetry-core>=2.0.0,<3.0.0"]
