@@ -1,0 +1,7 @@
+{
+  "status": "error",
+  "generated_at": "2025-10-15T20:27:15.689085+00:00",
+  "added_bills": [],
+  "conflicts": [],
+  "error": "ItemBill.__init__() missing 1 required positional argument: 'parts'"
+}

@@ -41,9 +41,9 @@ def extract_item_bills(workbook_path: Path) -> List[ItemBill]:
 
     workbook = load_workbook(filename=workbook_path, read_only=True, data_only=True)
     try:
-        # Require the specific sheet used by the input file
         sheet_name = "account debit vendor"
         if sheet_name not in workbook.sheetnames:
+            workbook.close()
             raise ValueError(f"Worksheet '{sheet_name}' not found in workbook")
         sheet = workbook[sheet_name]
 
@@ -112,6 +112,7 @@ def extract_item_bills(workbook_path: Path) -> List[ItemBill]:
                     supplier_name=supplier_name,
                     invoice_date=invoice_date,
                     invoice_number=invoice_number,
+                    parts=[],  # No parts info in Excel
                     source="excel",
                 )
             )

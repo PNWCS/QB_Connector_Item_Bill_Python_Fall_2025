@@ -5,7 +5,7 @@ from __future__ import annotations
 from pathlib import Path
 from typing import Dict
 
-from . import excel_reader
+from . import comparer, excel_reader, qb_gateway
 from .models import ItemBill
 from .reporting import iso_timestamp, write_report
 
@@ -21,22 +21,59 @@ def _bill_to_dict(bill: ItemBill) -> Dict[str, object]:
     }
 
 
-# def _conflict_to_dict(conflict) -> Dict[str, object]:
-#     return {
-#         "record_id": getattr(conflict, "record_id", None),
-#         "excel": getattr(conflict, "excel_name", None),
-#         "qb": getattr(conflict, "qb_name", None),
-#         "reason": getattr(conflict, "reason", None),
-#     }
+def _conflict_to_dict(conflict) -> Dict[str, object]:
+    # Support both the new Conflict dataclass and older shapes by falling
+    # back to multiple possible attribute names.
+    invoice_number = getattr(conflict, "invoice_number", None)
+    if invoice_number is None:
+        invoice_number = getattr(conflict, "record_id", None)
+
+    excel_supplier = getattr(conflict, "excel_supplier", None)
+    if excel_supplier is None:
+        excel_supplier = getattr(conflict, "excel_name", None)
+
+    qb_supplier = getattr(conflict, "qb_supplier", None)
+    if qb_supplier is None:
+        qb_supplier = getattr(conflict, "qb_name", None)
+
+    excel_date = getattr(conflict, "excel_date", None)
+    if excel_date is None:
+        excel_date = getattr(conflict, "excel_date", None)
+
+    qb_date = getattr(conflict, "qb_date", None)
+    if qb_date is None:
+        qb_date = getattr(conflict, "qb_date", None)
+
+    return {
+        "invoice_number": invoice_number,
+        "excel_supplier": excel_supplier,
+        "qb_supplier": qb_supplier,
+        "excel_date": excel_date,
+        "qb_date": qb_date,
+        "reason": getattr(conflict, "reason", None),
+    }
 
 
-# def _missing_in_excel_conflict(bill: ItemBill) -> Dict[str, object]:
-#     return {
-#         "invoice_number": bill.invoice_number,
-#         "excel_supplier": None,
-#         "qb_supplier": bill.supplier_name,
-#         "reason": "missing_in_excel",
-#     }
+def _missing_in_excel_conflict(bill: ItemBill) -> Dict[str, object]:
+    return {
+        "invoice_number": bill.invoice_number,
+        "excel_supplier": None,
+        "qb_supplier": bill.supplier_name,
+        "excel_date": None,
+        "qb_date": bill.invoice_date,
+        "reason": "missing_in_excel",
+    }
+
+
+def _missing_in_quickbooks_conflict(bill: ItemBill) -> Dict[str, object]:
+    return {
+        "invoice_number": bill.invoice_number,
+        "excel_supplier": bill.supplier_name,
+        "qb_supplier": None,
+        "excel_date": bill.invoice_date,
+        "qb_date": None,
+        "reason": "missing_in_quickbooks",
+    }
 
 
 def run_item_bills(
@@ -70,25 +107,26 @@ def run_item_bills(
 
     try:
         excel_bills = excel_reader.extract_item_bills(Path(workbook_path))
-        report_payload["added_bills"] = [_bill_to_dict(bill) for bill in excel_bills]
-
-        # qb_bills = qb_gateway.fetch_item_bills(company_file_path)
-        # comparison = comparer.compare_item_bills(excel_bills, qb_bills)
+        qb_bills = qb_gateway.fetch_item_bills(company_file_path)
+        comparison = comparer.compare_item_bills(excel_bills, qb_bills)
 
         # added_bills = qb_gateway.add_item_bills_batch(
         #     company_file_path, comparison.excel_only
         # )
 
-        # conflicts: List[Dict[str, object]] = []
-        # conflicts.extend(
-        #     _conflict_to_dict(conflict) for conflict in comparison.conflicts
-        # )
-        # conflicts.extend(
-        #     _missing_in_excel_conflict(bill) for bill in comparison.qb_only
-        # )
+        conflicts: list[Dict[str, object]] = []
+        conflicts.extend(
+            _conflict_to_dict(conflict) for conflict in comparison.conflicts
+        )
+        conflicts.extend(
+            _missing_in_excel_conflict(bill) for bill in comparison.qb_only
+        )
+        conflicts.extend(
+            _missing_in_quickbooks_conflict(bill) for bill in comparison.excel_only
+        )
 
         # report_payload["added_bills"] = [_bill_to_dict(bill) for bill in added_bills]
-        # report_payload["conflicts"] = conflicts
+        report_payload["conflicts"] = conflicts
 
     except Exception as exc:  # pragma: no cover - behaviour verified via tests
         report_payload["status"] = "error"

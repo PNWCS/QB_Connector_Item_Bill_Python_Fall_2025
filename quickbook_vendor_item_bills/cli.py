@@ -1,4 +1,4 @@
-"""Command-line interface for the payment terms synchroniser."""
+"""Command-line interface for the item bills synchroniser."""
 
 from __future__ import annotations
 
@@ -10,12 +10,12 @@ from .runner import run_item_bills
 
 def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(
-        description="Synchronise payment terms between Excel and QuickBooks"
+        description="Synchronise item bills between Excel and QuickBooks"
     )
     parser.add_argument(
         "--workbook",
         required=True,
-        help="Excel workbook containing the payment_terms worksheet",
+        help="Excel workbook containing the account debit vendor worksheet",
     )
     parser.add_argument("--output", help="Optional JSON output path")
 
