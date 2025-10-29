@@ -13,8 +13,18 @@ def compare_item_bills(
 ) -> ComparisonReport:
     """Compare Excel and QuickBooks Item bills and identify discrepancies."""
     # Build maps keyed by invoice_number for quick lookup
-    excel_map = {bill.invoice_number: bill for bill in excel_bills}
-    qb_map = {bill.invoice_number: bill for bill in qb_bills}
+    excel_map = {bill.id: bill for bill in excel_bills}
+    qb_map = {bill.id: bill for bill in qb_bills}
+
+    print("Debug: Comparing item bills")
+
+    for inv, bill in excel_map.items():
+        print(f"{inv}: {bill}")
+
+    print("Debug: Comparing item bills")
+
+    for inv, bill in qb_map.items():
+        print(f"{inv}: {bill}")
 
     excel_only: list[ItemBill] = []
     qb_only: list[ItemBill] = []
@@ -30,24 +40,28 @@ def compare_item_bills(
             if (bill.supplier_name or "") != (qb_bill.supplier_name or ""):
                 conflicts.append(
                     Conflict(
-                        invoice_number=inv,
-                        excel_supplier=bill.supplier_name,
-                        qb_supplier=qb_bill.supplier_name,
-                        excel_date=bill.invoice_date,
-                        qb_date=qb_bill.invoice_date,
-                        reason="supplier_mismatch",
+                        id=str(bill.id or qb_bill.id or inv),
+                        excel_supplier_name=bill.supplier_name,
+                        qb_supplier_name=qb_bill.supplier_name,
+                        excel_invoice_number=bill.invoice_number,
+                        qb_invoice_number=qb_bill.invoice_number,
+                        excel_invoice_date=bill.invoice_date,
+                        qb_invoice_date=qb_bill.invoice_date,
+                        reason="supplier_name_mismatch",
                     )
                 )
             # date mismatch (allow empty strings)
             if (bill.invoice_date or "") != (qb_bill.invoice_date or ""):
                 conflicts.append(
                     Conflict(
-                        invoice_number=inv,
-                        excel_supplier=bill.supplier_name,
-                        qb_supplier=qb_bill.supplier_name,
-                        excel_date=bill.invoice_date,
-                        qb_date=qb_bill.invoice_date,
-                        reason="date_mismatch",
+                        id=str(bill.id or qb_bill.id or inv),
+                        excel_supplier_name=bill.supplier_name,
+                        qb_supplier_name=qb_bill.supplier_name,
+                        excel_invoice_number=bill.invoice_number,
+                        qb_invoice_number=qb_bill.invoice_number,
+                        excel_invoice_date=bill.invoice_date,
+                        qb_invoice_date=qb_bill.invoice_date,
+                        reason="invoice_date_mismatch",
                     )
                 )
 

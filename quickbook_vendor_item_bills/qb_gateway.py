@@ -78,6 +78,8 @@ def fetch_item_bills(company_file: str | None = None) -> List[ItemBill]:
     root = _send_qbxml(qbxml)
     bills: List[ItemBill] = []
     for bill_ret in root.findall(".//BillRet"):
+        txn_id = bill_ret.findtext("TxnID") or ""
+        memo = (bill_ret.findtext("Memo") or "").strip()
         _vendor_ref = bill_ret.find("VendorRef")
         supplier_name = ""
         if _vendor_ref is not None:
@@ -105,6 +107,7 @@ def fetch_item_bills(company_file: str | None = None) -> List[ItemBill]:
                 invoice_number=invoice_number,
                 parts=parts,
                 source="quickbooks",
+                id=(memo or txn_id or None),
             )
         )
 
@@ -173,57 +176,104 @@ def fetch_item_bills(company_file: str | None = None) -> List[ItemBill]:
 #     return added_terms
 
 
-# def add_payment_term(company_file: str | None, term: PaymentTerm) -> PaymentTerm:
-#     """Create a payment term in QuickBooks and return the stored record."""
+# def add_item_bill(company_file: str | None, bill: ItemBill) -> ItemBill:
+#     """Create an Item Bill in QuickBooks and return the created record.
 
-#     try:
-#         days_value = int(term.record_id)
-#     except ValueError as exc:
-#         raise ValueError(
-#             "record_id must be numeric for QuickBooks payment terms"
-#         ) from exc
+#     This uses BillAddRq with the following fields from `bill`:
+#     - VendorRef/FullName: bill.supplier_name
+#     - TxnDate: bill.invoice_date
+#     - RefNumber: bill.invoice_number
+#     - ItemLineAdd entries for each part with ItemRef/FullName and Quantity
+#     """
 
+#     # Validate required fields
+#     if not bill.supplier_name or not str(bill.supplier_name).strip():
+#         raise ValueError("supplier_name (VendorRef FullName) is required to add a bill")
+
+#     # Build ItemLineAdd entries for parts
+#     item_lines = []
+#     for p in bill.parts:
+#         name = _escape_xml(p.name)
+#         qty = _escape_xml(str(p.quantity))
+#         item_lines.append(
+#             "        <ItemLineAdd>\n"
+#             "          <ItemRef>\n"
+#             f"            <FullName>{name}</FullName>\n"
+#             "          </ItemRef>\n"
+#             f"          <Quantity>{qty}</Quantity>\n"
+#             "        </ItemLineAdd>\n"
+#         )
+#     item_lines_xml = "".join(item_lines)
+
+#     vendor_name = _escape_xml(bill.supplier_name)
+#     # Normalize date to YYYY-MM-DD if a datetime string is provided
+#     date_raw = (bill.invoice_date or "").strip()
+#     date_only = date_raw[:10] if date_raw else ""
+#     txn_date_line = f"        <TxnDate>{_escape_xml(date_only)}</TxnDate>\n" if date_only else ""
+#     ref_number = _escape_xml(str(bill.invoice_number))
+
+#     memo_line = f"        <Memo>{_escape_xml(str(bill.id))}</Memo>\n" if bill.id else ""
 #     qbxml = (
 #         '<?xml version="1.0"?>\n'
-#         '<?qbxml version="13.0"?>\n'
+#         '<?qbxml version="16.0"?>\n'
 #         "<QBXML>\n"
 #         '  <QBXMLMsgsRq onError="stopOnError">\n'
-#         "    <StandardTermsAddRq>\n"
-#         "      <StandardTermsAdd>\n"
-#         f"        <Name>{_escape_xml(term.name)}</Name>\n"
-#         f"        <StdDiscountDays>{days_value}</StdDiscountDays>\n"
-#         "        <DiscountPct>0</DiscountPct>\n"
-#         "      </StandardTermsAdd>\n"
-#         "    </StandardTermsAddRq>\n"
+#         "    <BillAddRq>\n"
+#         "      <BillAdd>\n"
+#         "        <VendorRef>\n"
+#         f"          <FullName>{vendor_name}</FullName>\n"
+#         "        </VendorRef>\n"
+#         f"{txn_date_line}"
+#         f"        <RefNumber>{ref_number}</RefNumber>\n"
+#         f"{memo_line}"
+#         f"{item_lines_xml}"
+#         "      </BillAdd>\n"
+#         "    </BillAddRq>\n"
 #         "  </QBXMLMsgsRq>\n"
 #         "</QBXML>"
 #     )
 
-#     try:
-#         root = _send_qbxml(qbxml)
-#     except RuntimeError as exc:
-#         # Check if error is "name already in use" (error code 3100)
-#         if "already in use" in str(exc):
-#             # Return the term as-is since it already exists
-#             return PaymentTerm(
-#                 record_id=term.record_id, name=term.name, source="quickbooks"
-#             )
-#         raise
+#     root = _send_qbxml(qbxml)
 
-#     term_ret = root.find(".//StandardTermsRet")
-#     if term_ret is None:
-#         return PaymentTerm(
-#             record_id=term.record_id, name=term.name, source="quickbooks"
+#     # Parse BillRet from response
+#     bill_ret = root.find(".//BillRet")
+#     if bill_ret is None:
+#         # If no detailed return, fall back to the input
+#         return ItemBill(
+#             supplier_name=bill.supplier_name,
+#             invoice_date=bill.invoice_date,
+#             invoice_number=bill.invoice_number,
+#             parts=bill.parts,
+#             source="quickbooks",
 #         )
 
-#     record_id = term_ret.findtext("StdDiscountDays") or term.record_id
-#     try:
-#         record_id = str(int(record_id))
-#     except ValueError:
-#         record_id = record_id.strip()
-#     name = (term_ret.findtext("Name") or term.name).strip()
+#     txn_id = bill_ret.findtext("TxnID") or None
+#     memo = (bill_ret.findtext("Memo") or "").strip() or None
+#     _vendor_ref = bill_ret.find("VendorRef")
+#     out_supplier = ""
+#     if _vendor_ref is not None:
+#         out_supplier = (_vendor_ref.findtext("FullName") or "").strip()
+#     out_invoice_date = bill_ret.findtext("TxnDate") or bill_ret.findtext("TimeCreated") or ""
+#     out_invoice_number = bill_ret.findtext("RefNumber") or bill.invoice_number
 
-#     return PaymentTerm(record_id=record_id, name=name, source="quickbooks")
+#     out_parts: List[Part] = []
+#     for line_ret in bill_ret.findall(".//ItemLineRet"):
+#         item_ref = line_ret.find("ItemRef")
+#         part_name = ""
+#         if item_ref is not None:
+#             part_name = (item_ref.findtext("FullName") or "").strip()
+#         quantity = line_ret.findtext("Quantity") or ""
+#         if part_name:
+#             out_parts.append(Part(name=part_name, quantity=quantity))
+
+#     return ItemBill(
+#         supplier_name=out_supplier,
+#         invoice_date=out_invoice_date,
+#         invoice_number=out_invoice_number,
+#         parts=out_parts,
+#         source="quickbooks",
+#         id=(memo or txn_id),
+#     )
 
 
 def _escape_xml(value: str) -> str:

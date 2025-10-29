@@ -110,6 +110,8 @@ def run_item_bills(
         qb_bills = qb_gateway.fetch_item_bills(company_file_path)
         comparison = comparer.compare_item_bills(excel_bills, qb_bills)
 
+        # qb_gateway.add_item_bill(company_file_path, comparison.excel_only[0])
+
         # added_bills = qb_gateway.add_item_bills_batch(
         #     company_file_path, comparison.excel_only
         # )

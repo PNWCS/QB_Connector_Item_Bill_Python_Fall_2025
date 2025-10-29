@@ -7,25 +7,30 @@ column headings, case-insensitive when trimmed):
 - "Invoice Date"
 - "Invoice Num"
 
-It reads the first worksheet in the workbook, converts Excel date values to
-ISO-8601 strings for `invoice_date`, and preserves numeric `invoice_number`
-values when they appear numeric. Rows missing supplier or invoice number are
-skipped.
+It reads the "account debit vendor" worksheet, converts Excel date values to
+ISO-8601 strings for `invoice_date`, and always returns `invoice_number` as a
+string (even if the cell is numeric). Rows missing supplier or invoice number are
+skipped. If present, the composite `id` is built from "Parent ID" and
+"Child ID" columns as "<Parent ID>-<Child ID>".
 """
 
 from __future__ import annotations
 
 from pathlib import Path
+import sys
 from typing import List, Optional
 from datetime import date, datetime
 
 from openpyxl import load_workbook
 
-from .models import ItemBill
+from .models import ItemBill, Part
 
 
 def _normalise(header: Optional[str]) -> str:
     return str(header).strip().lower() if header is not None else ""
+
+
+temp_part = Part(name="Piston", quantity="10")
 
 
 def extract_item_bills(workbook_path: Path) -> List[ItemBill]:
@@ -59,10 +64,14 @@ def extract_item_bills(workbook_path: Path) -> List[ItemBill]:
         supplier_key = _normalise("Supplier Name")
         date_key = _normalise("Invoice Date")
         invoice_key = _normalise("Invoice Num")
+        parent_id_key = _normalise("Parent ID")
+        child_id_key = _normalise("Child ID")
 
         supplier_idx = header_index.get(supplier_key)
         date_idx = header_index.get(date_key)
         invoice_idx = header_index.get(invoice_key)
+        parent_id_idx = header_index.get(parent_id_key)
+        child_id_idx = header_index.get(child_id_key)
 
         bills: List[ItemBill] = []
         for row in rows:
@@ -96,23 +105,45 @@ def extract_item_bills(workbook_path: Path) -> List[ItemBill]:
                 # skip if invoice number missing
                 continue
 
-            try:
-                if (
-                    isinstance(invoice_number_val, float)
-                    and invoice_number_val.is_integer()
-                ):
-                    invoice_number = int(invoice_number_val)
+            # Always normalise invoice number to string
+            if isinstance(invoice_number_val, float):
+                # Trim trailing .0 if it's an integer-like float
+                if invoice_number_val.is_integer():
+                    invoice_number = str(int(invoice_number_val))
                 else:
-                    invoice_number = invoice_number_val
-            except Exception:
-                invoice_number = int(str(invoice_number_val).strip())
+                    invoice_number = ("%f" % invoice_number_val).rstrip("0").rstrip(".")
+            else:
+                invoice_number = str(invoice_number_val).strip()
+
+            # Build composite id from Parent ID and Child ID if present
+            parent_id_val = None
+            if parent_id_idx is not None and parent_id_idx < len(row):
+                parent_id_val = row[parent_id_idx]
+            child_id_val = None
+            if child_id_idx is not None and child_id_idx < len(row):
+                child_id_val = row[child_id_idx]
+
+            def _to_str(v):
+                if v is None:
+                    return ""
+                try:
+                    if isinstance(v, float) and v.is_integer():
+                        return str(int(v))
+                except Exception:
+                    pass
+                return str(v).strip()
+
+            pid = _to_str(parent_id_val)
+            cid = _to_str(child_id_val)
+            composite_id = f"{pid}-{cid}" if pid or cid else None
 
             bills.append(
                 ItemBill(
+                    id=composite_id,
                     supplier_name=supplier_name,
                     invoice_date=invoice_date,
                     invoice_number=invoice_number,
-                    parts=[],  # No parts info in Excel
+                    parts=[temp_part],  # No parts info in Excel
                     source="excel",
                 )
             )
@@ -124,3 +155,21 @@ def extract_item_bills(workbook_path: Path) -> List[ItemBill]:
 
 
 __all__ = ["extract_item_bills"]
+
+
+if __name__ == "__main__":  # pragma: no cover - manual execution helper
+    if len(sys.argv) < 2:
+        print(
+            "Usage: python -m quickbook_vendor_item_bills.excel_reader <workbook_path>"
+        )
+        raise SystemExit(2)
+
+    workbook_arg = sys.argv[1]
+    try:
+        bills = extract_item_bills(Path(workbook_arg))
+    except Exception as e:  # simple CLI output for assignment demo
+        print(f"Error reading workbook: {e}")
+        raise SystemExit(1)
+
+    for b in bills:
+        print(str(b))

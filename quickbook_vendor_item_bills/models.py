@@ -8,8 +8,10 @@ from typing import Literal, List
 
 SourceLiteral = Literal["excel", "quickbooks"]
 ConflictReason = Literal[
-    "supplier_mismatch",
-    "date_mismatch",
+    "supplier_name_mismatch",
+    "invoice_date_mismatch",
+    "invoice_number_mismatch",
+    "part_mismatch",
     "missing_in_excel",
     "missing_in_quickbooks",
 ]
@@ -22,6 +24,9 @@ class Part:
     name: str
     quantity: str
 
+    def __str__(self) -> str:
+        return f"Part(name='{self.name}', quantity='{self.quantity}')"
+
 
 @dataclass(slots=True)
 class ItemBill:
@@ -29,20 +34,36 @@ class ItemBill:
 
     supplier_name: str
     invoice_date: str
-    parts: list[Part]
-    invoice_number: str | int
+    invoice_number: str
     source: SourceLiteral
+    parts: list[Part] = field(default_factory=list)
+    id: str | None = None
+
+    def __str__(self) -> str:
+        parts_str = ", ".join(str(p) for p in self.parts) if self.parts else ""
+        return (
+            "ItemBill("
+            f"supplier_name='{self.supplier_name}', "
+            f"invoice_date='{self.invoice_date}', "
+            f"invoice_number='{self.invoice_number}', "
+            f"parts=[{parts_str}], "
+            f"source='{self.source}', "
+            f"id='{self.id}'"
+            ")"
+        )
 
 
 @dataclass(slots=True)
 class Conflict:
     """Describes a discrepancy between Excel and QuickBooks item bills."""
 
-    invoice_number: str | int
-    excel_supplier: str | None
-    qb_supplier: str | None
-    excel_date: str | None
-    qb_date: str | None
+    id: str
+    excel_supplier_name: str | None
+    qb_supplier_name: str | None
+    excel_invoice_number: str | None
+    qb_invoice_number: str | None
+    excel_invoice_date: str | None
+    qb_invoice_date: str | None
     reason: ConflictReason
 
 
@@ -56,6 +77,7 @@ class ComparisonReport:
 
 
 __all__ = [
+    "Part",
     "ItemBill",
     "Conflict",
     "ComparisonReport",
