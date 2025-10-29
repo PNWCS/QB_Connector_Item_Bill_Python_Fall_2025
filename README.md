@@ -30,3 +30,4 @@ poetry run pytest
 
 ## Build
 To be filled by student. The CLI project needs to be built as an .exe file.
+
