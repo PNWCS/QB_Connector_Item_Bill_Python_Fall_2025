@@ -1,4 +1,4 @@
-# Item Bill Connector 
+# Item Bill Connector
 
 ## Setup Project
 Once you forked and cloned the repo, run:
@@ -25,6 +25,7 @@ poetry run ruff check --fix
 ## Test
 Run
 ```bash
+poetry run pytest
 poetry run pytest
 ```
 
