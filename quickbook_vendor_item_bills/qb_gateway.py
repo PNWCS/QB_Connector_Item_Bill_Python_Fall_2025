@@ -12,6 +12,7 @@ except ImportError:  # pragma: no cover
     win32com = None  # type: ignore
 
 from .models import ItemBill, Part
+from datetime import datetime, date
 
 
 APP_NAME = "Quickbooks Connector"  # do not change this
@@ -84,7 +85,13 @@ def fetch_item_bills(company_file: str | None = None) -> List[ItemBill]:
         supplier_name = ""
         if _vendor_ref is not None:
             supplier_name = (_vendor_ref.findtext("FullName") or "").strip()
-        invoice_date = bill_ret.findtext("TimeCreated") or ""
+        time_created = bill_ret.findtext("TimeCreated") or ""
+        try:
+            invoice_date: date | None = (
+                datetime.fromisoformat(time_created).date() if time_created else None
+            )
+        except Exception:
+            invoice_date = None
         invoice_number = bill_ret.findtext("RefNumber") or ""
 
         if not invoice_number:
@@ -112,6 +119,17 @@ def fetch_item_bills(company_file: str | None = None) -> List[ItemBill]:
         )
 
     return bills
+
+
+def read_item_bills() -> List[ItemBill]:
+    """Read bills from the currently open QuickBooks company file.
+
+    This function takes no arguments, per assignment requirements. It uses an
+    empty company file path to instruct QuickBooks to use the currently open
+    company file/session.
+    """
+
+    return fetch_item_bills("")
 
 
 # def add_payment_terms_batch(
@@ -286,4 +304,14 @@ def _escape_xml(value: str) -> str:
     )
 
 
-__all__ = ["fetch_item_bills"]
+__all__ = ["fetch_item_bills", "read_item_bills"]
+
+
+if __name__ == "__main__":  # pragma: no cover - manual execution helper
+    try:
+        items = read_item_bills()
+    except Exception as e:
+        print(f"Error reading from QuickBooks: {e}")
+        raise SystemExit(1)
+    for it in items:
+        print(str(it))

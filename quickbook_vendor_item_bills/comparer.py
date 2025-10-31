@@ -50,8 +50,8 @@ def compare_item_bills(
                         reason="supplier_name_mismatch",
                     )
                 )
-            # date mismatch (allow empty strings)
-            if (bill.invoice_date or "") != (qb_bill.invoice_date or ""):
+            # invoice date mismatch (date objects or None)
+            if bill.invoice_date != qb_bill.invoice_date:
                 conflicts.append(
                     Conflict(
                         id=str(bill.id or qb_bill.id or inv),

@@ -4,6 +4,7 @@ from __future__ import annotations
 
 from dataclasses import dataclass, field
 from typing import Literal, List
+from datetime import date
 
 
 SourceLiteral = Literal["excel", "quickbooks"]
@@ -33,7 +34,7 @@ class ItemBill:
     """Represents an item bill synchronised between Excel and QuickBooks."""
 
     supplier_name: str
-    invoice_date: str
+    invoice_date: date | None
     invoice_number: str
     source: SourceLiteral
     parts: list[Part] = field(default_factory=list)
@@ -44,7 +45,7 @@ class ItemBill:
         return (
             "ItemBill("
             f"supplier_name='{self.supplier_name}', "
-            f"invoice_date='{self.invoice_date}', "
+            f"invoice_date='{self.invoice_date.isoformat() if self.invoice_date else ''}', "
             f"invoice_number='{self.invoice_number}', "
             f"parts=[{parts_str}], "
             f"source='{self.source}', "
@@ -62,8 +63,8 @@ class Conflict:
     qb_supplier_name: str | None
     excel_invoice_number: str | None
     qb_invoice_number: str | None
-    excel_invoice_date: str | None
-    qb_invoice_date: str | None
+    excel_invoice_date: date | None
+    qb_invoice_date: date | None
     reason: ConflictReason
 
 

@@ -6,51 +6,51 @@ from pathlib import Path
 from typing import Dict
 
 from . import comparer, excel_reader, qb_gateway
-from .models import ItemBill
+from .models import ItemBill, Conflict
 from .reporting import iso_timestamp, write_report
 
 DEFAULT_REPORT_NAME = "item_bills_report.json"
 
 
+def _iso(val):
+    """Return ISO string for date-like values; pass through strings; else None.
+
+    Supports both datetime/date objects and pre-existing strings from tests.
+    """
+    if val is None:
+        return None
+    if hasattr(val, "isoformat"):
+        try:
+            return val.isoformat()
+        except Exception:
+            pass
+    # If already a string (e.g., test fixtures), keep as-is
+    return val
+
+
 def _bill_to_dict(bill: ItemBill) -> Dict[str, object]:
     return {
         "supplier_name": bill.supplier_name,
-        "invoice_date": bill.invoice_date,
+        "invoice_date": _iso(bill.invoice_date),
         "invoice_number": bill.invoice_number,
         "source": bill.source,
     }
 
 
-def _conflict_to_dict(conflict) -> Dict[str, object]:
+def _conflict_to_dict(conflict: Conflict) -> Dict[str, object]:
     # Support both the new Conflict dataclass and older shapes by falling
     # back to multiple possible attribute names.
-    invoice_number = getattr(conflict, "invoice_number", None)
-    if invoice_number is None:
-        invoice_number = getattr(conflict, "record_id", None)
-
-    excel_supplier = getattr(conflict, "excel_supplier", None)
-    if excel_supplier is None:
-        excel_supplier = getattr(conflict, "excel_name", None)
-
-    qb_supplier = getattr(conflict, "qb_supplier", None)
-    if qb_supplier is None:
-        qb_supplier = getattr(conflict, "qb_name", None)
-
-    excel_date = getattr(conflict, "excel_date", None)
-    if excel_date is None:
-        excel_date = getattr(conflict, "excel_date", None)
-
-    qb_date = getattr(conflict, "qb_date", None)
-    if qb_date is None:
-        qb_date = getattr(conflict, "qb_date", None)
+    invoice_number = conflict.excel_invoice_number or conflict.qb_invoice_number
+    excel_date = _iso(conflict.excel_invoice_date)
+    qb_date = _iso(conflict.qb_invoice_date)
 
     return {
         "invoice_number": invoice_number,
-        "excel_supplier": excel_supplier,
-        "qb_supplier": qb_supplier,
+        "excel_supplier": conflict.excel_supplier_name,
+        "qb_supplier": conflict.qb_supplier_name,
         "excel_date": excel_date,
         "qb_date": qb_date,
-        "reason": getattr(conflict, "reason", None),
+        "reason": conflict.reason,
     }
 
 
@@ -60,7 +60,7 @@ def _missing_in_excel_conflict(bill: ItemBill) -> Dict[str, object]:
         "excel_supplier": None,
         "qb_supplier": bill.supplier_name,
         "excel_date": None,
-        "qb_date": bill.invoice_date,
+        "qb_date": _iso(bill.invoice_date),
         "reason": "missing_in_excel",
     }
 
@@ -70,7 +70,7 @@ def _missing_in_quickbooks_conflict(bill: ItemBill) -> Dict[str, object]:
         "invoice_number": bill.invoice_number,
         "excel_supplier": bill.supplier_name,
         "qb_supplier": None,
-        "excel_date": bill.invoice_date,
+        "excel_date": _iso(bill.invoice_date),
         "qb_date": None,
         "reason": "missing_in_quickbooks",
     }

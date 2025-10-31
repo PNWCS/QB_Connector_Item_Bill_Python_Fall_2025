@@ -8,7 +8,7 @@ column headings, case-insensitive when trimmed):
 - "Invoice Num"
 
 It reads the "account debit vendor" worksheet, converts Excel date values to
-ISO-8601 strings for `invoice_date`, and always returns `invoice_number` as a
+Python `date` objects for `invoice_date`, and always returns `invoice_number` as a
 string (even if the cell is numeric). Rows missing supplier or invoice number are
 skipped. If present, the composite `id` is built from "Parent ID" and
 "Child ID" columns as "<Parent ID>-<Child ID>".
@@ -90,12 +90,24 @@ def extract_item_bills(workbook_path: Path) -> List[ItemBill]:
             if date_idx is not None and date_idx < len(row):
                 invoice_date_val = row[date_idx]
 
-            if isinstance(invoice_date_val, (date, datetime)):
-                invoice_date = invoice_date_val.isoformat()
+            # Normalize to a date object or None
+            invoice_date: date | None
+            if isinstance(invoice_date_val, datetime):
+                invoice_date = invoice_date_val.date()
+            elif isinstance(invoice_date_val, date):
+                invoice_date = invoice_date_val
             elif invoice_date_val is None:
-                invoice_date = ""
+                invoice_date = None
             else:
-                invoice_date = str(invoice_date_val).strip()
+                s = str(invoice_date_val).strip()
+                if not s:
+                    invoice_date = None
+                else:
+                    # Try ISO-8601 parsing
+                    try:
+                        invoice_date = datetime.fromisoformat(s).date()
+                    except Exception:
+                        invoice_date = None
 
             # invoice number
             invoice_number_val = None

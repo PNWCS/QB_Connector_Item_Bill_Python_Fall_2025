@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 from pathlib import Path
+from datetime import date
 from unittest.mock import patch
 
 import pytest
@@ -17,21 +18,21 @@ def mock_excel_bills():
     return [
         ItemBill(
             supplier_name="A",
-            invoice_date="2025-01-01",
+            invoice_date=date(2025, 1, 1),
             invoice_number="1",
             parts=[],
             source="excel",
         ),
         ItemBill(
             supplier_name="B",
-            invoice_date="2025-01-02",
+            invoice_date=date(2025, 1, 2),
             invoice_number="2",
             parts=[],
             source="excel",
         ),
         ItemBill(
             supplier_name="C",
-            invoice_date="2025-01-03",
+            invoice_date=date(2025, 1, 3),
             invoice_number="3",
             parts=[],
             source="excel",
@@ -45,14 +46,14 @@ def mock_qb_bills():
     return [
         ItemBill(
             supplier_name="X",
-            invoice_date="2025-01-10",
+            invoice_date=date(2025, 1, 10),
             invoice_number="10",
             parts=[],
             source="quickbooks",
         ),
         ItemBill(
             supplier_name="Y",
-            invoice_date="2025-01-11",
+            invoice_date=date(2025, 1, 11),
             invoice_number="11",
             parts=[],
             source="quickbooks",
@@ -67,21 +68,21 @@ def mock_comparison_no_conflicts():
     comparison.excel_only = [
         ItemBill(
             supplier_name="A",
-            invoice_date="2025-01-01",
+            invoice_date=date(2025, 1, 1),
             invoice_number="1",
             parts=[],
             source="excel",
         ),
         ItemBill(
             supplier_name="B",
-            invoice_date="2025-01-02",
+            invoice_date=date(2025, 1, 2),
             invoice_number="2",
             parts=[],
             source="excel",
         ),
         ItemBill(
             supplier_name="C",
-            invoice_date="2025-01-03",
+            invoice_date=date(2025, 1, 3),
             invoice_number="3",
             parts=[],
             source="excel",
@@ -90,14 +91,14 @@ def mock_comparison_no_conflicts():
     comparison.qb_only = [
         ItemBill(
             supplier_name="X",
-            invoice_date="2025-01-10",
+            invoice_date=date(2025, 1, 10),
             invoice_number="10",
             parts=[],
             source="quickbooks",
         ),
         ItemBill(
             supplier_name="Y",
-            invoice_date="2025-01-11",
+            invoice_date=date(2025, 1, 11),
             invoice_number="11",
             parts=[],
             source="quickbooks",
@@ -114,8 +115,8 @@ def mock_comparison_with_conflicts():
     comparison.excel_only = [
         ItemBill(
             supplier_name="A",
-            invoice_date="2025-01-01",
-            invoice_number=1,
+            invoice_date=date(2025, 1, 1),
+            invoice_number="1",
             parts=[],
             source="excel",
         ),
@@ -126,11 +127,11 @@ def mock_comparison_with_conflicts():
             id="2",
             excel_invoice_number="2",
             qb_invoice_number="2",
-            excel_supplier="B",
-            qb_supplier="B_Changed",
-            excel_date="2025-01-02",
-            qb_date="2025-01-02",
-            reason="supplier_mismatch",
+            excel_supplier_name="B",
+            qb_supplier_name="B_Changed",
+            excel_invoice_date=date(2025, 1, 2),
+            qb_invoice_date=date(2025, 1, 2),
+            reason="supplier_name_mismatch",
         )
     ]
     return comparison
