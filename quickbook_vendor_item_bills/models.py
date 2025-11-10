@@ -65,7 +65,21 @@ class Conflict:
     qb_invoice_number: str | None
     excel_invoice_date: date | None
     qb_invoice_date: date | None
-    reason: ConflictReason
+    reason: List[ConflictReason]
+
+    def __str__(self) -> str:
+        return (
+            "Conflict("
+            f"id='{self.id}', "
+            f"excel_supplier_name='{self.excel_supplier_name}', "
+            f"qb_supplier_name='{self.qb_supplier_name}', "
+            f"excel_invoice_number='{self.excel_invoice_number}', "
+            f"qb_invoice_number='{self.qb_invoice_number}', "
+            f"excel_invoice_date='{self.excel_invoice_date.isoformat() if self.excel_invoice_date else ''}', "
+            f"qb_invoice_date='{self.qb_invoice_date.isoformat() if self.qb_invoice_date else ''}', "
+            f"reason={self.reason}"
+            ")"
+        )
 
 
 @dataclass(slots=True)
