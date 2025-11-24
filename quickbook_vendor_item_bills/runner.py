@@ -38,18 +38,14 @@ def _bill_to_dict(bill: ItemBill) -> Dict[str, object]:
 
 
 def _conflict_to_dict(conflict: Conflict) -> Dict[str, object]:
-    # Support both the new Conflict dataclass and older shapes by falling
-    # back to multiple possible attribute names.
+    """Serialize a Conflict with a single reason value."""
     invoice_number = conflict.excel_invoice_number or conflict.qb_invoice_number
-    excel_date = _iso(conflict.excel_invoice_date)
-    qb_date = _iso(conflict.qb_invoice_date)
-
     return {
         "invoice_number": invoice_number,
         "excel_supplier": conflict.excel_supplier_name,
         "qb_supplier": conflict.qb_supplier_name,
-        "excel_date": excel_date,
-        "qb_date": qb_date,
+        "excel_date": _iso(conflict.excel_invoice_date),
+        "qb_date": _iso(conflict.qb_invoice_date),
         "reason": conflict.reason,
     }
 

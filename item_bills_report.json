@@ -1,64 +1,39 @@
 {
   "status": "success",
-  "generated_at": "2025-10-29T17:23:54.579887+00:00",
-  "added_bills": [],
+  "generated_at": "2025-11-24T18:48:52.630975+00:00",
+  "added_itembills": [],
   "conflicts": [
     {
-      "invoice_number": null,
-      "excel_supplier": null,
-      "qb_supplier": null,
-      "excel_date": null,
-      "qb_date": null,
-      "reason": "date_mismatch"
+      "record_id": "44733-",
+      "reason": "data_mismatch",
+      "excel_supplier_name": "B",
+      "qb_supplier_name": "B",
+      "excel_invoice_number": "60956",
+      "qb_invoice_number": "609",
+      "excel_invoice_date": "2023-11-09",
+      "qb_invoice_date": "2023-11-09"
     },
     {
-      "invoice_number": "123",
-      "excel_supplier": null,
-      "qb_supplier": "Piston Experts",
-      "excel_date": null,
-      "qb_date": "2025-09-17T13:17:43-06:00",
-      "reason": "missing_in_excel"
+      "record_id": "987",
+      "reason": "missing_in_excel",
+      "excel_supplier_name": null,
+      "qb_supplier_name": "Piston Experts",
+      "excel_invoice_number": null,
+      "qb_invoice_number": "123",
+      "excel_invoice_date": null,
+      "qb_invoice_date": "2025-09-17"
     },
     {
-      "invoice_number": "60956",
-      "excel_supplier": "B",
-      "qb_supplier": null,
-      "excel_date": "2023-11-09T00:00:00",
-      "qb_date": null,
-      "reason": "missing_in_quickbooks"
-    },
-    {
-      "invoice_number": "3522763",
-      "excel_supplier": "C",
-      "qb_supplier": null,
-      "excel_date": "2023-12-08T00:00:00",
-      "qb_date": null,
-      "reason": "missing_in_quickbooks"
-    },
-    {
-      "invoice_number": "1553",
-      "excel_supplier": "D",
-      "qb_supplier": null,
-      "excel_date": "2023-12-23T00:00:00",
-      "qb_date": null,
-      "reason": "missing_in_quickbooks"
-    },
-    {
-      "invoice_number": "1553",
-      "excel_supplier": "D",
-      "qb_supplier": null,
-      "excel_date": "2023-12-23T00:00:00",
-      "qb_date": null,
-      "reason": "missing_in_quickbooks"
-    },
-    {
-      "invoice_number": "1553",
-      "excel_supplier": "D",
-      "qb_supplier": null,
-      "excel_date": "2023-12-23T00:00:00",
-      "qb_date": null,
-      "reason": "missing_in_quickbooks"
+      "record_id": "123-456",
+      "reason": "missing_in_excel",
+      "excel_supplier_name": null,
+      "qb_supplier_name": "C",
+      "excel_invoice_number": null,
+      "qb_invoice_number": "9876",
+      "excel_invoice_date": null,
+      "qb_invoice_date": "2025-11-13"
     }
   ],
+  "same_itembills": 7,
   "error": null
 }

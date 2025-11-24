@@ -9,12 +9,9 @@ from datetime import date
 
 SourceLiteral = Literal["excel", "quickbooks"]
 ConflictReason = Literal[
-    "supplier_name_mismatch",
-    "invoice_date_mismatch",
-    "invoice_number_mismatch",
-    "part_mismatch",
-    "missing_in_excel",
-    "missing_in_quickbooks",
+    "data_mismatch",  # any discrepancy between matched Excel/QB bills
+    "missing_in_excel",  # bill exists only in QuickBooks
+    "missing_in_quickbooks",  # bill exists only in Excel
 ]
 
 
@@ -56,7 +53,13 @@ class ItemBill:
 
 @dataclass(slots=True)
 class Conflict:
-    """Describes a discrepancy between Excel and QuickBooks item bills."""
+    """Describes a discrepancy between Excel and QuickBooks item bills.
+
+    The `reason` field is a single `ConflictReason` value:
+    - "data_mismatch" for any field/parts difference between paired bills
+    - "missing_in_excel" when bill only in QuickBooks
+    - "missing_in_quickbooks" when bill only in Excel
+    """
 
     id: str
     excel_supplier_name: str | None
@@ -65,7 +68,7 @@ class Conflict:
     qb_invoice_number: str | None
     excel_invoice_date: date | None
     qb_invoice_date: date | None
-    reason: List[ConflictReason]
+    reason: ConflictReason
 
     def __str__(self) -> str:
         return (
@@ -77,7 +80,7 @@ class Conflict:
             f"qb_invoice_number='{self.qb_invoice_number}', "
             f"excel_invoice_date='{self.excel_invoice_date.isoformat() if self.excel_invoice_date else ''}', "
             f"qb_invoice_date='{self.qb_invoice_date.isoformat() if self.qb_invoice_date else ''}', "
-            f"reason={self.reason}"
+            f"reason='{self.reason}'"
             ")"
         )
 

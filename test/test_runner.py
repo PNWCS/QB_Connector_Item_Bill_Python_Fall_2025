@@ -131,7 +131,7 @@ def mock_comparison_with_conflicts():
             qb_supplier_name="B_Changed",
             excel_invoice_date=date(2025, 1, 2),
             qb_invoice_date=date(2025, 1, 2),
-            reason="supplier_name_mismatch",
+            reason="data_mismatch",
         )
     ]
     return comparison
