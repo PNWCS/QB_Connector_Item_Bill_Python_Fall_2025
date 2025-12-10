@@ -53,6 +53,49 @@ If you omit `--output`, the report defaults to `item_bills_report.json` in the c
 C:\Users\ChristianD\Projects\QB_Connector_Item_Bill_Python_Fall_2025\dist\quickbook_vendor_item_bills.exe --workbook C:\path\to\company_data.xlsx
 ```
 
+### Sample Output JSON file
+
+```
+{
+  "status": "success",
+  "generated_at": "2025-11-24T20:34:02.458327+00:00",
+  "added_itembills": [
+    {
+      "record_id": "44444-11111",
+      "supplier_name": "C",
+      "invoice_number": "33333",
+      "invoice_date": "2023-12-08"
+    }
+  ],
+  "conflicts": [
+    {
+      "record_id": "44733-",
+      "reason": "data_mismatch",
+      "excel_supplier_name": "B",
+      "qb_supplier_name": "B",
+      "excel_invoice_number": "60956",
+      "qb_invoice_number": "609",
+      "excel_invoice_date": "2023-11-09",
+      "qb_invoice_date": "2023-11-09"
+    },
+    {
+      "record_id": "987",
+      "reason": "missing_in_excel",
+      "excel_supplier_name": null,
+      "qb_supplier_name": "Piston Experts",
+      "excel_invoice_number": null,
+      "qb_invoice_number": "123",
+      "excel_invoice_date": null,
+      "qb_invoice_date": "2025-09-17"
+    }
+  ],
+  "same_itembills": 7,
+  "error": null
+}
+
+```
+
+
 ## Notes
 
 - Ensure QuickBooks Desktop is open with the target company file when running the CLI (reads current session) or during batch add operations.
