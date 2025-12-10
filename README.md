@@ -20,13 +20,6 @@ poetry run python -m quickbook_vendor_item_bills --workbook company_data.xlsx [-
 
 If you omit `--output`, the report defaults to `item_bills_report.json` in the current directory.
 
-## Tests
-
-Run tests:
-```bash
-poetry run pytest
-```
-
 ## Building as Executable
 
 To build the project as a standalone `.exe`:
